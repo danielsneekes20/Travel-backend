@@ -5,10 +5,9 @@ import com.Sneekes.backend.repository.UserRepository;
 import com.Sneekes.backend.service.JwtUtil;
 import com.Sneekes.backend.service.auth.LoginRequest;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,8 +41,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         try {
+            // Authenticate user
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
@@ -51,17 +51,23 @@ public class AuthController {
                     )
             );
 
+            // Generate JWT token
             String jwtToken = jwtUtil.generateToken(authentication.getName());
+            ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
+                    .httpOnly(true)
+                    .secure(false)           // In productie: true
+                    .sameSite("Lax")        // 🔑 Nodig voor credentials: 'include'
+                    .path("/")
+                    .maxAge(3600)
+                    .build();
 
-            // Return token in res  ponse body
-            return ResponseEntity.ok()
-                    .header("Authorization", "Bearer " + jwtToken) // Optional: Also set in header
-                    .body(Map.of("token", jwtToken));
+            response.addHeader("Set-Cookie", cookie.toString());
+
+            return ResponseEntity.ok().body("Login successful");
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
-
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestParam String username,

@@ -79,4 +79,11 @@ public class HelloController {
 
         return ResponseEntity.ok(user);
     }
+
+    @GetMapping("/admin/test")
+    public String admin() {
+        return "Admin successful!";
+    }
+
+
 }

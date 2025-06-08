@@ -1,10 +1,13 @@
 package com.Sneekes.backend.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -34,6 +37,14 @@ public class User {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_favorite_stations",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "station_id")
+    )
+    private List<Station> favoriteStations;
+
     public String getEmail() {
         return email;
     }
@@ -41,7 +52,6 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -53,4 +63,17 @@ public class User {
     public void setPassword(String password) {
         this.password = password; // Set password
     }
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private List<Role> roles;
+
+    public List<Role> getRoles() {
+        return roles;
+    }
+
 }

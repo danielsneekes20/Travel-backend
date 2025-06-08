@@ -2,6 +2,7 @@ package com.Sneekes.backend.service;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -35,16 +36,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String token = null;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.debug("No Authorization header or it doesn't start with Bearer");
+        // 🔍 Extract token from cookie named "jwt"
+        System.out.println("🍪 Cookie ontvangen: " + request.getCookies());
+
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                System.out.println("🍪 Cookie ontvangen: " + cookie.getName() + " = " + cookie.getValue());
+                if ("jwt".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    logger.debug("JWT token extracted from cookie");
+                    break;
+                }
+            }
+        }
+
+        if (token == null) {
+            logger.debug("JWT cookie not found");
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = authHeader.substring(7); // Remove "Bearer "
-        logger.debug("Extracted JWT token: {}", token);
 
         try {
             if (jwtUtil.validateToken(token)) {

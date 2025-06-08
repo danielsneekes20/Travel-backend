@@ -44,19 +44,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                // ✅ Optionally ENABLE CSRF if using cookies
+                .csrf(csrf -> csrf.disable()) // Consider enabling later for cookie protection
+
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/register").permitAll()
+                        .requestMatchers("/auth/login", "/auth/register", "/error").permitAll() 
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
+                            // Delete the JWT cookie on logout
+                            var cookie = new jakarta.servlet.http.Cookie("jwt", null);
+                            cookie.setHttpOnly(true);
+                            cookie.setSecure(false); // Use true in production with HTTPS
+                            cookie.setPath("/");
+                            cookie.setMaxAge(0); // Delete cookie
+                            response.addCookie(cookie);
+
                             response.setStatus(HttpStatus.OK.value());
                         })
                 );
@@ -68,14 +83,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
+                "http://localhost:3000", // Frontend origin
                 "http://localhost:8080"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        config.addExposedHeader("Authorization"); // Expose Authorization header
+        config.setAllowCredentials(true); // ✅ Required for cookies
         config.setMaxAge(3600L);
+
+        // Not necessary anymore if using cookie, but doesn't hurt to expose
+        config.addExposedHeader("Authorization");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
