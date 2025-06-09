@@ -7,23 +7,20 @@ import com.Sneekes.backend.entity.User;
 import com.Sneekes.backend.repository.FavoriteStationRepository;
 import com.Sneekes.backend.repository.StationRepository;
 import com.Sneekes.backend.repository.UserRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 import com.Sneekes.backend.dto.NsStationDto;
-import org.springframework.web.client.RestTemplate;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import com.Sneekes.backend.dto.AddToFavoriteStationRequest;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class StationService {
+    @Value("${ns.api.key}")
+    private String nsApiKey;
 
     private final StationRepository stationRepository;
     private final FavoriteStationRepository favoriteStationRepository;
@@ -45,7 +42,6 @@ public class StationService {
     }
 
     public Set<StationDto> addToFavoriteStations(Long stationId, Authentication authentication) {
-        System.out.println("stationId = " + stationId);
         Station station = stationRepository.findById(stationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Station not found"));
 
@@ -125,7 +121,7 @@ public class StationService {
         String url = "https://gateway.apiportal.ns.nl/reisinformatie-api/api/v2/stations";
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Ocp-Apim-Subscription-Key", "7b014b8a627148bcafbc86d45b22d6f0");
+        headers.set("Ocp-Apim-Subscription-Key", nsApiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
