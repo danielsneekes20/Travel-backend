@@ -121,7 +121,7 @@ public class StationService {
         String url = "https://gateway.apiportal.ns.nl/reisinformatie-api/api/v2/stations";
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Ocp-Apim-Subscription-Key", nsApiKey);
+        headers.set("Ocp-Apim-Subscription-Key", nsApiKey) ;
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
